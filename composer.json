@@ -1,0 +1,26 @@
+{
+    "require": {
+		"php": ">= 8.1",
+		"ext-dom": "*",
+
+        "symfony/finder": "^7.3",
+        "nikic/php-parser": ">= 5.5"
+	},
+    "autoload": {
+        "psr-4": {
+            "PhpLocate\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpLocate\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.2"
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse -c phpstan.neon"
+	}
+}
