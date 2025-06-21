@@ -1,7 +1,14 @@
 {
-	"name": "rkr/php-locate",
+	"name": "rkr/php-structure-locator",
+	"description": "A PHP library to locate classes, functions, and other stuff in PHP files using xml and xpath.",
+	"license": "MIT",
+	"type": "library",
+	"keywords": ["php", "structure", "parser", "xml", "xpath", "locator", "finder"],
+	"homepage": "https://github.com/rkrx/php-structure-locator",
+	"authors": [{"name": "Ron Kirschler", "email": "ron.kirschler@gmail.com"}],
     "require": {
 		"php": ">= 8.1",
+
 		"ext-dom": "*",
 
         "symfony/finder": "^7.3",
