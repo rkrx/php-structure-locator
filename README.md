@@ -20,7 +20,7 @@ Find all attributes of class-methods with a specific name:
 
 # Progress
 
-- [ ] Functions
+- [x] Functions
   - [ ] Parameters
     - [ ] Attributes
     - [x] Type hint
