@@ -12,8 +12,12 @@ class Index {
 		$doc = new DOMDocument();
 		$doc->preserveWhiteSpace = false;
 		$doc->formatOutput = true;
-		if(file_exists($path) && !$doc->load($path)) {
-			throw new RuntimeException("Failed to load XML from $path");
+		if(file_exists($path)) {
+			if(!$doc->load($path)) {
+				throw new RuntimeException("Failed to load XML from $path");
+			}
+		} else {
+			$doc->loadXML('<files/>');
 		}
 		
 		/** @var DOMElement $node */

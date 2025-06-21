@@ -2,6 +2,7 @@
 
 namespace PhpLocate;
 
+use PhpLocate\Builder\TypeToNodeService;
 use PhpLocate\Internal\AstContext;
 use PhpLocate\Internal\XMLNode;
 use PhpParser\Node;
@@ -13,6 +14,10 @@ use PhpParser\ParserFactory;
 use RuntimeException;
 
 class PHPDiscoveryService {
+	public function __construct(
+		private readonly TypeToNodeService $typeToNodeService
+	) {}
+	
 	/**
 	 * Discovers all elements in a PHP file and feeds them info $node
 	 *
@@ -54,8 +59,39 @@ class PHPDiscoveryService {
 			foreach($astNode->stmts as $stmt) {
 				$this->interpreteAst($stmt, $node, $ctx);
 			}
-		} elseif($astNode instanceof Node\Stmt\Use_) {
-			// Do nothing for use statements in this context
+		} elseif($astNode instanceof Node\Stmt\Function_) {
+			$attr = ['name' => (string) $astNode->name];
+			
+			$functionNode = $node->addChild('function', $attr);
+			
+			if($astNode->returnType !== null) {
+				$returnNode = $node->addChild('return', []);
+				$this->typeToNodeService->typeToString($astNode->returnType, $returnNode);
+			}
+			
+			foreach($astNode->getAttrGroups() as $attrGroup) {
+				$this->interpreteAst($attrGroup, $functionNode, $ctx);
+			}
+			
+			foreach($astNode->getParams() as $paramNode) {
+				$this->interpreteAst($paramNode, $functionNode, $ctx);
+			}
+			
+			foreach($astNode->stmts as $stmt) {
+				$this->interpreteAst($stmt, $functionNode, $ctx);
+			}
+		} elseif($astNode instanceof Node\Stmt\Trait_) {
+			$attr = ['name' => (string) $astNode->namespacedName];
+			
+			$traitNode = $node->addChild('trait', $attr);
+			
+			foreach($astNode->stmts as $stmt) {
+				$this->interpreteAst($stmt, $traitNode, $ctx);
+			}
+			
+			foreach($astNode->attrGroups as $attrGroup) {
+				$this->interpreteAst($attrGroup, $traitNode, $ctx);
+			}
 		} elseif($astNode instanceof Node\Stmt\Class_) {
 			$attr = ['name' => (string) $astNode->namespacedName];
 			
@@ -104,13 +140,52 @@ class PHPDiscoveryService {
 			}
 		} elseif($astNode instanceof Node\Stmt\TraitUse) {
 			foreach($astNode->traits as $traitNode) {
-				$attr = ['name' => (string) ($traitNode->namespacedName ?? $traitNode->name)];
+				/** @var null|string $namespacedName */
+				$namespacedName = $traitNode->namespacedName ?? null;
+				$attr = ['name' => (string) ($namespacedName ?? $traitNode->name)];
 				$node->addChild('use', $attr);
 			}
 			
 			//foreach($astNode->getMethods() as $methodNode) {
 			//	$this->interpreteAst($methodNode, $traitUseNode, $ctx);
 			//}
+		} elseif($astNode instanceof Node\Stmt\Property) {
+			foreach($astNode->props as $propNode) {
+				/** @var string $name */
+				$name = $propNode->name;
+				$attr = ['name' => $name];
+				
+				if($astNode->isPublic()) {
+					$attr['visibility'] = 'public';
+				} elseif($astNode->isProtected()) {
+					$attr['visibility'] = 'protected';
+				} elseif($astNode->isPrivate()) {
+					$attr['visibility'] = 'private';
+				}
+				
+				if($astNode->isStatic()) {
+					$attr['static'] = 'true';
+				}
+				
+				if($astNode->isFinal()) {
+					$attr['final'] = 'true';
+				}
+				
+				if($astNode->isReadOnly()) {
+					$attr['readonly'] = 'true';
+				}
+				
+				if($astNode->type !== null) {
+					$returnNode = $node->addChild('property', $attr);
+					$this->typeToNodeService->typeToString($astNode->type, $returnNode);
+				}
+				
+				$propertyNode = $node->addChild('property', $attr);
+				
+				foreach($astNode->attrGroups as $attrGroup) {
+					$this->interpreteAst($attrGroup, $propertyNode, $ctx);
+				}
+			}
 		} elseif($astNode instanceof Node\Stmt\ClassMethod) {
 			$attr = ['name' => (string) $astNode->name];
 			
@@ -139,10 +214,8 @@ class PHPDiscoveryService {
 			}
 			
 			if($astNode->returnType !== null) {
-				$type = $this->typeToString($astNode->returnType);
-				if($type !== null) {
-					$attr['returnType'] = $type;
-				}
+				$returnNode = $node->addChild('return', []);
+				$this->typeToNodeService->typeToString($astNode->returnType, $returnNode);
 			}
 			
 			$methodNode = $node->addChild('method', $attr);
@@ -157,15 +230,14 @@ class PHPDiscoveryService {
 		} elseif($astNode instanceof Node\Param) {
 			/** @var array<string, string> $attr */
 			$name = $astNode->var->name; // @phpstan-ignore-line
+			
+			/** @var string $paramName */
+			$paramName = $name instanceof Node\Expr ? $name->toString() : (string) $name; // @phpstan-ignore-line
+			
 			$attr = [
-				'name' => $name instanceof Node\Expr ? $name->toString() : (string) $name, // @phpstan-ignore-line
+				'name' => $paramName,
 			];
-			
-			$type = $this->typeToString($astNode->type);
-			if($type !== null) {
-				$attr['type'] = $this->typeToString($astNode->type);
-			}
-			
+
 			if($astNode->byRef) {
 				$attr['byRef'] = 'true';
 			}
@@ -174,7 +246,16 @@ class PHPDiscoveryService {
 				$attr['variadic'] = 'true';
 			}
 			
-			$node->addChild('param', $attr); // @phpstan-ignore-line
+			$paramNode = $node->addChild('param', $attr);
+			
+			foreach($astNode->attrGroups as $attrGroup) {
+				$this->interpreteAst($attrGroup, $paramNode, $ctx);;
+			}
+			
+			if($astNode->type !== null) {
+				$typeNode = $paramNode->addChild('type', []);
+				$this->typeToNodeService->typeToString($astNode->type, $typeNode);
+			}
 		} elseif($astNode instanceof Node\Arg) {
 			$attr = [
 				'name' => (string) $astNode->name,
@@ -191,25 +272,29 @@ class PHPDiscoveryService {
 			
 			$node->addChild('argument', $attr);
 		} else {
-			$dumper = new NodeDumper;
-			echo $dumper->dump($astNode) . "\n";
-			exit;
-		}
-	}
-	
-	private function typeToString(Node|null $type): ?string {
-		if($type === null) {
-			return null;
-		}
-		
-		if($type instanceof Node\NullableType) {
-			if($type->type === null) { // @phpstan-ignore-line
-				return null;
+			$inspect = match(get_class($astNode)) {
+				Node\Stmt\Echo_::class,
+				Node\Stmt\InlineHTML::class,
+				Node\Stmt\Declare_::class,
+				Node\Stmt\Const_::class,
+				Node\Stmt\Expression::class,
+				Node\Stmt\If_::class,
+				Node\Stmt\Foreach_::class,
+				Node\Stmt\Return_::class,
+				Node\Stmt\Enum_::class,
+				Node\Stmt\While_::class,
+				Node\Stmt\TryCatch::class,
+				Node\Stmt\Nop::class,
+				Node\Stmt\ClassConst::class,
+				Node\Stmt\Use_::class,
+				Node\Stmt\Interface_::class => false,
+				default => true
+			};
+			if($inspect) {
+				$dumper = new NodeDumper;
+				echo $dumper->dump($astNode) . "\n";
+				exit;
 			}
-			
-			return sprintf('null|%s', $type->type->toString());
 		}
-		
-		return $type->toString(); // @phpstan-ignore-line
 	}
 }

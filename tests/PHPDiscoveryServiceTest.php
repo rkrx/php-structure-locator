@@ -3,6 +3,7 @@
 namespace PhpLocate;
 
 use DOMDocument;
+use PhpLocate\Builder\TypeToNodeService;
 use PhpLocate\Internal\XMLNode;
 use PhpLocate\Suspects\ClassAttributeA;
 use PhpLocate\Suspects\MethodAttributeA;
@@ -20,7 +21,7 @@ class PHPDiscoveryServiceTest extends TestCase {
 		$node ??= new XMLNode($doc->documentElement); // @phpstan-ignore-line
 		$fileNode = $node->getFirstNode('/files', require: true)->addChild('file');
 		
-		$service = new PHPDiscoveryService();
+		$service = new PHPDiscoveryService(new TypeToNodeService());
 		$service->discoverInFile(__DIR__ . '/Suspects/MyClass.php', $fileNode);
 		
 		$this->node = $fileNode;

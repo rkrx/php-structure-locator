@@ -172,12 +172,6 @@ class XMLNode {
 	
 	public function clear(): void {
 		if($this->node instanceof DOMElement) {
-			while($this->node->hasAttributes()) {
-				/** @var DOMAttr $item */
-				$item = $this->node->attributes->item(0);
-				$this->node->removeAttribute($item->name);
-			}
-			
 			while($this->node->hasChildNodes()) {
 				/** @var DOMNode $child */
 				$child = $this->node->firstChild;
