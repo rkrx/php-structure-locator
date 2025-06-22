@@ -26,7 +26,7 @@ class Index {
 	}
 	
 	public function __construct(
-		public readonly XMLNode $node
+		private readonly XMLNode $node
 	) {
 		$doc = $this->node->getDocument();
 		if($doc->documentElement !== null && $doc->documentElement->nodeName !== 'files') {
@@ -36,6 +36,21 @@ class Index {
 			$rootElement = $doc->createElement('files');
 			$doc->appendChild($rootElement);
 		}
+	}
+	
+	public function getFirstNode(string $xpath): ?XMLNode {
+		$node = $this->node->getFirstNode($xpath);
+		if($node === null) {
+			return null;
+		}
+		return $node;
+	}
+	
+	public function getFirstString(string $xpath, ?string $default = null): ?string {
+		if(func_num_args() < 2) {
+			return $this->node->getFirstString($xpath);
+		}
+		return $this->node->getFirstString($xpath, $default);
 	}
 	
 	/**
