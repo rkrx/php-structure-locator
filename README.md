@@ -39,7 +39,7 @@ Then, search the index using XPath:
 use PhpLocate\Index;
 
 $index = Index::fromFile(__DIR__ . '/index.xml');
-$path = $index->getFirstString("//class/method/attribute[@name='NS\\MyAttribute']/@path");
+$path = $index->getFirstString("/files/file[class/method/attribute[@name='NS\\MyAttribute']]/@path");
 echo $path;
 ```
 
