@@ -7,19 +7,20 @@ use PhpLocate\Index;
 use PhpLocate\Internal\ChangeSetProjection\ChangedFile;
 use PhpLocate\Internal\ChangeSetProjection\NewFile;
 use PhpLocate\Internal\ChangeSetProjection\RemovedFile;
-use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 /**
  * @internal
  */
 class ChangeSetProjectionService {
 	/**
+	 * @param iterable<SplFileInfo> $items
 	 * @return Generator<NewFile|RemovedFile|ChangedFile>
 	 */
-	public function findChanged(Finder $finder, Index $index): Generator {
+	public function findChanged(iterable $items, Index $index): Generator {
 		$files = [];
 		$lookup = [];
-		foreach($finder->files() as $file) {
+		foreach($items as $file) {
 			$files[$file->getRelativePathname()] = $file->getMTime();
 			$lookup[$file->getRelativePathname()] = $file->getPathname();
 		}
