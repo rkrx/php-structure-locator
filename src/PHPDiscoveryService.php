@@ -44,7 +44,6 @@ class PHPDiscoveryService {
 			'preserveOriginalNames' => false,
 			'replaceNodes' => true,
 		]));
-		//$traverser->addVisitor(new NodeVisitor());
 		$modifiedStmts = $traverser->traverse($stmts);
 		
 		foreach($modifiedStmts as $astNode) {
