@@ -2,14 +2,28 @@
 
 namespace PhpLocate;
 
-use PhpLocate\Internal\XMLNode;
+use DOMException;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 class IndexTest extends TestCase {
 	private string $tempFile = '';
 	
 	protected function setUp(): void {
-		$this->tempFile = sys_get_temp_dir() . '/php-locate-test-' . uniqid() . '.xml';
+		$this->tempFile = sys_get_temp_dir() . '/php-locate-test-' . microtime(true) . '.xml';
+		
+		$files = (new Finder())
+			->in(__DIR__ . '/..')
+			->filter(fn(SplFileInfo $item) => str_starts_with($item->getRelativePathname(), 'tests/Suspects/'))
+			->filter(fn(SplFileInfo $item) => $item->isFile())
+			->filter(fn(SplFileInfo $item) => str_ends_with($item->getBasename(), '.php'));
+		
+		$service = new UpdateIndexService(new NullLogger());
+		$service->updateIndex(indexPath: $this->tempFile, files: $files);
+		
+		#echo file_get_contents($this->tempFile);
 	}
 	
 	protected function tearDown(): void {
@@ -18,124 +32,31 @@ class IndexTest extends TestCase {
 		}
 	}
 	
-	public function testFromFile(): void {
-		// Test with non-existent file (should create new structure)
+	public function testFindClassAttribute(): void {
 		$index = Index::fromFile($this->tempFile);
 		$this->assertInstanceOf(Index::class, $index);
 		
-		// Create a test XML file
-		$doc = new DOMDocument();
-		$root = $doc->createElement('files');
-		$doc->appendChild($root);
-		$fileNode = $doc->createElement('file');
-		$fileNode->setAttribute('path', 'test/path.php');
-		$fileNode->setAttribute('mtime', '1234567890');
-		$fileNode->setAttribute('hash', 'abcdef123456');
-		$root->appendChild($fileNode);
-		$doc->save($this->tempFile);
+		$path = $index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/attribute[@name="PhpLocate\\Suspects\\ClassAttributeA"]]/@path');
+		self::assertEquals('tests/Suspects/MyClass.php', $path);
 		
-		// Test with existing file
+		$path = $index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/attribute[@name="NonExistent"]]/@path', '-');
+		self::assertEquals('-', $path);
+		
+		$this->expectException(DOMException::class);
+		$index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/attribute[@name="NonExistent"]]/@path');
+	}
+	
+	public function testFindMethodAttribute(): void {
 		$index = Index::fromFile($this->tempFile);
 		$this->assertInstanceOf(Index::class, $index);
 		
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		$this->assertCount(1, $paths);
-		$this->assertArrayHasKey('test/path.php', $paths);
-		$this->assertEquals('1234567890', $paths['test/path.php']);
-	}
-	
-	public function testGetFilePathsAndLastModifiedDate(): void {
-		$doc = new DOMDocument();
-		$root = $doc->createElement('files');
-		$doc->appendChild($root);
+		$path = $index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeA"]]/@path');
+		self::assertEquals('tests/Suspects/MyClass.php', $path);
 		
-		// Add multiple file nodes
-		for($i = 1; $i <= 3; $i++) {
-			$fileNode = $doc->createElement('file');
-			$fileNode->setAttribute('path', "path/to/file$i.php");
-			$fileNode->setAttribute('mtime', (string) (1000000000 + $i));
-			$fileNode->setAttribute('hash', "hash$i");
-			$root->appendChild($fileNode);
-		}
+		$path = $index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeC"]]/@path', '-');
+		self::assertEquals('-', $path);
 		
-		$index = new Index(new XMLNode($root));
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		
-		$this->assertCount(3, $paths);
-		$this->assertArrayHasKey('path/to/file1.php', $paths);
-		$this->assertArrayHasKey('path/to/file2.php', $paths);
-		$this->assertArrayHasKey('path/to/file3.php', $paths);
-		$this->assertEquals('1000000001', $paths['path/to/file1.php']);
-		$this->assertEquals('1000000002', $paths['path/to/file2.php']);
-		$this->assertEquals('1000000003', $paths['path/to/file3.php']);
-	}
-	
-	public function testAddFile(): void {
-		$index = Index::fromFile($this->tempFile);
-		
-		// Add a new file
-		$node = $index->addFile('src/Test.php', 1234567890, 'abc123');
-		$this->assertInstanceOf(XMLNode::class, $node);
-		
-		// Verify the file was added
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		$this->assertCount(1, $paths);
-		$this->assertArrayHasKey('src/Test.php', $paths);
-		
-		// Update the same file
-		$node = $index->addFile('src/Test.php', 1234567891, 'abc124');
-		
-		// Verify the file was updated, not duplicated
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		$this->assertCount(1, $paths);
-		
-		// Save and reload to verify persistence
-		$index->saveTo($this->tempFile);
-		$newIndex = Index::fromFile($this->tempFile);
-		$paths = $newIndex->getFilePathsAndLastModifiedDate();
-		$this->assertCount(1, $paths);
-		$this->assertArrayHasKey('src/Test.php', $paths);
-	}
-	
-	public function testRemoveFile(): void {
-		$index = Index::fromFile($this->tempFile);
-		
-		// Add files
-		$index->addFile('src/Test1.php', 1234567890, 'abc123');
-		$index->addFile('src/Test2.php', 1234567891, 'abc124');
-		
-		// Verify files were added
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		$this->assertCount(2, $paths);
-		
-		// Remove one file
-		$index->removeFile('src/Test1.php');
-		
-		// Verify only one file remains
-		$paths = $index->getFilePathsAndLastModifiedDate();
-		$this->assertCount(1, $paths);
-		$this->assertArrayHasKey('src/Test2.php', $paths);
-		$this->assertArrayNotHasKey('src/Test1.php', $paths);
-	}
-	
-	public function testSaveTo(): void {
-		$index = Index::fromFile($this->tempFile);
-		$index->addFile('src/Test.php', 1234567890, 'abc123');
-		$index->saveTo($this->tempFile);
-		
-		$this->assertFileExists($this->tempFile);
-		
-		// Verify the saved content
-		$doc = new DOMDocument();
-		$doc->load($this->tempFile);
-		$xpath = new \DOMXPath($doc);
-		$fileNodes = $xpath->query('/files/file');
-		
-		$this->assertEquals(1, $fileNodes->length);
-		/** @var \DOMElement $fileNode */
-		$fileNode = $fileNodes->item(0);
-		$this->assertEquals('src/Test.php', $fileNode->getAttribute('path'));
-		$this->assertEquals('1234567890', $fileNode->getAttribute('mtime'));
-		$this->assertEquals('abc123', $fileNode->getAttribute('hash'));
+		$this->expectException(DOMException::class);
+		$index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeC"]]/@path');
 	}
 }
