@@ -49,8 +49,6 @@ class PHPDiscoveryService {
 		foreach($modifiedStmts as $astNode) {
 			$this->interpreteAst($astNode, $node, new AstContext());
 		}
-		
-		printf("%s\n", $node);
 	}
 	
 	private function interpreteAst(Node $astNode, XMLNode $node, AstContext $ctx): void {
