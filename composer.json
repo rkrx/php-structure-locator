@@ -12,7 +12,8 @@
 		"ext-dom": "*",
 
         "symfony/finder": "^7.3",
-        "nikic/php-parser": ">= 5.5"
+        "nikic/php-parser": ">= 5.5",
+		"psr/log": ">= 1.0"
 	},
     "autoload": {
         "psr-4": {
