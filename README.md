@@ -18,6 +18,31 @@ The indexer performs the following steps:
 Find all attributes of class-methods with a specific name:
 `//class/method/attribute[@name='NS\\MyAttribute']`
 
+First, index your PHP files:
+
+```php
+use PhpLocate\UpdateIndexService;
+use Psr\Log\NullLogger;
+use Symfony\Component\Finder\Finder;
+
+$files = (new Finder())
+    ->in(__DIR__ . '/src')
+    ->name('*.php');
+
+$service = new UpdateIndexService(new NullLogger());
+$service->updateIndex(indexPath: __DIR__ . '/index.xml', files: $files);
+```
+
+Then, search the index using XPath:
+
+```php
+use PhpLocate\Index;
+
+$index = Index::fromFile(__DIR__ . '/index.xml');
+$path = $index->getFirstString("//class/method/attribute[@name='NS\\MyAttribute']/@path");
+echo $path;
+```
+
 # Progress
 
 - [x] Functions
