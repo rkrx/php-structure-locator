@@ -8,6 +8,7 @@ use DOMElement;
 use DOMException;
 use DOMNamedNodeMap;
 use DOMNode;
+use DOMNodeList;
 use DOMXPath;
 use Generator;
 
@@ -82,14 +83,19 @@ class XMLNode {
 		/** @var DOMDocument $doc */
 		$doc = $this->node->ownerDocument;
 		$this->xpath ??= new DOMXPath($doc);
-		$value = $this->xpath->evaluate('string('.$xpath.')');
-		if($value === false && func_num_args() === 1) {
+		
+		/** @var false|DOMNodeList<DOMNode> $node */
+		$node = $this->xpath->evaluate($xpath);
+		if($node === false) {
 			throw new DOMException("Invalid XPath query: $xpath");
 		}
-		if($value === false) {
-			$value = null;
+		if($node->length < 1) {
+			if(func_num_args() === 1) {
+				throw new DOMException("No node found for XPath query: $xpath");
+			}
+			return $default;
 		}
-		return $value ?? $default;
+		return $node->item(0)?->nodeValue;
 	}
 	
 	/**
