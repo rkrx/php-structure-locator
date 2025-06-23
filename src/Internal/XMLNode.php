@@ -29,7 +29,7 @@ class XMLNode {
 		/** @var DOMDocument $doc */
 		$doc = $this->node->ownerDocument;
 		$this->xpath ??= new DOMXPath($doc);
-		$result = $this->xpath->evaluate(sprintf("count(%s)", $xpath));
+		$result = $this->xpath->evaluate(sprintf("count(%s)", $xpath), $this->node);
 		return $result > 0;
 	}
 	
@@ -41,7 +41,7 @@ class XMLNode {
 		/** @var DOMDocument $doc */
 		$doc = $this->node->ownerDocument;
 		$this->xpath ??= new DOMXPath($doc);
-		$children = $this->xpath->query($xpath);
+		$children = $this->xpath->query($xpath, $this->node);
 		if($children === false) {
 			throw new DOMException("Invalid XPath query: $xpath");
 		}
@@ -52,15 +52,14 @@ class XMLNode {
 	
 	/**
 	 * @param string $xpath
-	 * @param bool $require
-	 * @return ($require is true ? XMLNode : XMLNode|null)
+	 * @return XMLNode
 	 * @throws DOMException
 	 */
-	public function getFirstNode(string $xpath, bool $require = false): ?XMLNode {
+	public function getFirstNode(string $xpath): XMLNode {
 		/** @var DOMDocument $doc */
 		$doc = $this->node->ownerDocument;
 		$this->xpath ??= new DOMXPath($doc);
-		$children = $this->xpath->query($xpath);
+		$children = $this->xpath->query($xpath, $this->node);
 		if($children === false) {
 			throw new DOMException("Invalid XPath query: $xpath");
 		}
@@ -72,8 +71,28 @@ class XMLNode {
 			}
 		}
 		
-		if($require) {
-			throw new DOMException("No node found for XPath query: $xpath");
+		throw new RuntimeDOMException("No node found for XPath query: $xpath");
+	}
+	
+	/**
+	 * @param string $xpath
+	 * @return XMLNode|null
+	 * @throws DOMException
+	 */
+	public function tryGetFirstNode(string $xpath): ?XMLNode {
+		/** @var DOMDocument $doc */
+		$doc = $this->node->ownerDocument;
+		$this->xpath ??= new DOMXPath($doc);
+		$children = $this->xpath->query($xpath, $this->node);
+		if($children === false) {
+			throw new DOMException("Invalid XPath query: $xpath");
+		}
+		
+		if($children->length > 0) {
+			$node = $children->item(0);
+			if($node !== null) {
+				return new XMLNode($node);
+			}
 		}
 		
 		return null;
@@ -85,13 +104,13 @@ class XMLNode {
 		$this->xpath ??= new DOMXPath($doc);
 		
 		/** @var false|DOMNodeList<DOMNode> $node */
-		$node = $this->xpath->evaluate($xpath);
+		$node = $this->xpath->evaluate($xpath, $this->node);
 		if($node === false) {
 			throw new DOMException("Invalid XPath query: $xpath");
 		}
 		if($node->length < 1) {
 			if(func_num_args() === 1) {
-				throw new DOMException("No node found for XPath query: $xpath");
+				throw new RuntimeDOMException("No node found for XPath query: $xpath");
 			}
 			return $default;
 		}
@@ -119,21 +138,21 @@ class XMLNode {
 	 * @param string $name
 	 * @param string|null $default
 	 * @return ($default is string ? string : string|null)
-	 * @throws DOMException
+	 * @throws RuntimeDOMException
 	 */
-	public function getAttribute(string $name, ?string $default = null): ?string {
+	public function getAttr(string $name, ?string $default = null): ?string {
 		$node = $this->node;
 		if($node instanceof DOMElement) {
 			$attribute = $node->getAttribute($name);
 			if((string) $attribute === '') {
 				if($default === null) {
-					throw new DOMException("Attribute '$name' not found in node {$node->nodeName}");
+					throw new RuntimeDOMException("Attribute '$name' not found in node {$node->nodeName}");
 				}
 				return $default;
 			}
 			return $attribute;
 		}
-		throw new DOMException("Node is not an element: {$node->nodeName}");
+		throw new RuntimeDOMException("Node is not an element: {$node->nodeName}");
 	}
 	
 	/**
@@ -142,7 +161,7 @@ class XMLNode {
 	 * @return $this
 	 * @throws DOMException
 	 */
-	public function setAttribute(string $name, bool|int|float|string $value): self {
+	public function setAttr(string $name, bool|int|float|string $value): self {
 		if(!$this->node instanceof DOMElement) {
 			throw new DOMException("Node is not an element: {$this->node->nodeName}");
 		}
@@ -154,10 +173,31 @@ class XMLNode {
 	}
 	
 	/**
+	 * @return XMLNode
+	 * @throws RuntimeDOMException
+	 */
+	public function parent(): XMLNode {
+		if($this->node->parentNode !== null) {
+			return new XMLNode($this->node->parentNode);
+		}
+		throw new RuntimeDOMException("No parent node found for node {$this->node->nodeName}");
+	}
+	
+	/**
+	 * @return XMLNode|null
+	 */
+	public function tryParent(): ?XMLNode {
+		if($this->node->parentNode !== null) {
+			return new XMLNode($this->node->parentNode);
+		}
+		return null;
+	}
+	
+	/**
 	 * @param string $name
 	 * @param array<string, string> $attributes
 	 * @return XMLNode
-	 * @throws \DOMException
+	 * @throws DOMException
 	 */
 	public function addChild(string $name, array $attributes = []): XMLNode {
 		/** @var DOMDocument $doc */
