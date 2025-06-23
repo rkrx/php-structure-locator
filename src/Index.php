@@ -4,6 +4,7 @@ namespace PhpLocate;
 
 use DOMDocument;
 use DOMElement;
+use Generator;
 use PhpLocate\Internal\XMLNode;
 use RuntimeException;
 
@@ -38,12 +39,21 @@ class Index {
 		}
 	}
 	
-	public function getFirstNode(string $xpath): ?XMLNode {
-		$node = $this->node->getFirstNode($xpath);
-		if($node === null) {
-			return null;
-		}
-		return $node;
+	/**
+	 * @param string $xpath
+	 * @return Generator<XMLNode>
+	 * @throws \DOMException
+	 */
+	public function getNodes(string $xpath): Generator {
+		yield from $this->node->getNodes($xpath);
+	}
+	
+	public function getFirstNode(string $xpath): XMLNode {
+		return $this->node->getFirstNode($xpath);
+	}
+	
+	public function tryGetFirstNode(string $xpath): ?XMLNode {
+		return $this->node->tryGetFirstNode($xpath);
 	}
 	
 	public function getFirstString(string $xpath, ?string $default = null): ?string {
@@ -60,19 +70,19 @@ class Index {
 		$fileNodes = $this->node->getNodes('/files/*');
 		$result = [];
 		foreach($fileNodes as $fileNode) {
-			$result[$fileNode->getAttribute('path')] = (string) $fileNode->getAttribute('mtime');
+			$result[$fileNode->getAttr('path')] = (string) $fileNode->getAttr('mtime');
 		}
 		return $result;
 	}
 	
 	public function addFile(string $relativePath, int $mtime, string $hash): XMLNode {
-		$fileNode = $this->node->getFirstNode(sprintf('/files/file[@path="%s"]', strtr($relativePath, ['\\' => '/', '"' => '\\"'])));
+		$fileNode = $this->node->tryGetFirstNode(sprintf('/files/file[@path="%s"]', strtr($relativePath, ['\\' => '/', '"' => '\\"'])));
 		if($fileNode === null) {
-			$fileNode = $this->node->getFirstNode('/files', require: true)->addChild('file');
+			$fileNode = $this->node->getFirstNode('/files')->addChild('file');
 		}
-		$fileNode->setAttribute('path', $relativePath);
-		$fileNode->setAttribute('mtime', $mtime);
-		$fileNode->setAttribute('hash', $hash);
+		$fileNode->setAttr('path', $relativePath);
+		$fileNode->setAttr('mtime', $mtime);
+		$fileNode->setAttr('hash', $hash);
 		return $fileNode;
 	}
 	
