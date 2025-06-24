@@ -23,11 +23,12 @@ class Index {
 		
 		/** @var DOMElement $node */
 		$node = $doc->documentElement;
+		
 		return new self(new XMLNode($node));
 	}
 	
 	public function __construct(
-		private readonly XMLNode $node
+		private readonly XMLNode $node,
 	) {
 		$doc = $this->node->getDocument();
 		if($doc->documentElement !== null && $doc->documentElement->nodeName !== 'files') {
@@ -60,6 +61,7 @@ class Index {
 		if(func_num_args() < 2) {
 			return $this->node->getFirstString($xpath);
 		}
+		
 		return $this->node->getFirstString($xpath, $default);
 	}
 	
@@ -72,6 +74,7 @@ class Index {
 		foreach($fileNodes as $fileNode) {
 			$result[$fileNode->getAttr('path')] = (string) $fileNode->getAttr('mtime');
 		}
+		
 		return $result;
 	}
 	
@@ -83,6 +86,7 @@ class Index {
 		$fileNode->setAttr('path', $relativePath);
 		$fileNode->setAttr('mtime', $mtime);
 		$fileNode->setAttr('hash', $hash);
+		
 		return $fileNode;
 	}
 	
