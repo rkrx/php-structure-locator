@@ -11,7 +11,7 @@
 
 		"ext-dom": "*",
 
-        "symfony/finder": "^7.3",
+        "symfony/finder": ">= 6.0",
         "nikic/php-parser": ">= 5.5",
 		"psr/log": ">= 1.0"
 	},
