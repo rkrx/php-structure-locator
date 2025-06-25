@@ -66,6 +66,14 @@ class Index {
 	}
 	
 	/**
+	 * @param string $xpath
+	 * @return string[]
+	 */
+	public function getStrings(string $xpath): array {
+		return $this->node->getStrings($xpath);
+	}
+	
+	/**
 	 * @return array<string, string>
 	 */
 	public function getFilePathsAndLastModifiedDate(): array {

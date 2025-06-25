@@ -3,6 +3,7 @@
 namespace PhpLocate;
 
 use DOMException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\Finder\Finder;
@@ -32,7 +33,15 @@ class IndexTest extends TestCase {
 		}
 	}
 	
-	public function testFindClassAttribute(): void {
+	#[Test]
+	public function getStrings(): void {
+		$index = Index::fromFile($this->tempFile);
+		$allFiles = $index->getStrings('/files/file[class/@name="PhpLocate\\Suspects\\MyClass"]/@path');
+		self::assertEquals(['tests/Suspects/MyClass.php'], $allFiles);
+	}
+	
+	#[Test]
+	public function findClassAttribute(): void {
 		$index = Index::fromFile($this->tempFile);
 		$this->assertInstanceOf(Index::class, $index);
 		

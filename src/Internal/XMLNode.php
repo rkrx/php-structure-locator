@@ -98,6 +98,32 @@ class XMLNode {
 		return null;
 	}
 	
+	/**
+	 * @param string $xpath
+	 * @return string[]
+	 * @throws DOMException
+	 */
+	public function getStrings(string $xpath): array {
+		/** @var DOMDocument $doc */
+		$doc = $this->node->ownerDocument;
+		$this->xpath ??= new DOMXPath($doc);
+		
+		/** @var false|DOMNodeList<DOMNode> $nodes */
+		$nodes = $this->xpath->query($xpath, $this->node);
+		if($nodes === false) {
+			throw new DOMException("Invalid XPath query: $xpath");
+		}
+		
+		$result = [];
+		
+		/** @var DOMNode $node */
+		foreach($nodes as $node) {
+			$result[] = $node->textContent;
+		}
+		
+		return $result;
+	}
+	
 	public function getFirstString(string $xpath, ?string $default = null): ?string {
 		/** @var DOMDocument $doc */
 		$doc = $this->node->ownerDocument;
@@ -132,6 +158,10 @@ class XMLNode {
 		}
 		
 		return $result;
+	}
+	
+	public function getText(): ?string {
+		return $this->node->textContent;
 	}
 	
 	/**
