@@ -27,7 +27,7 @@ class TypeToNodeService {
 				}
 			}
 		} else {
-			$node->addChild('named', ['name' => $type->toString()]); // @phpstan-ignore-line
+			$node->addChild('const', ['name' => $type->toString()]); // @phpstan-ignore-line
 		}
 	}
 }
