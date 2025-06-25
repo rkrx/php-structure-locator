@@ -47,6 +47,13 @@ class ChangeSetProjectionService {
 		$changedFiles = array_diff_assoc($intersection, $files);
 		foreach($changedFiles as $file => $mtime) {
 			$path = $lookup[$file];
+			
+			$indexHash = $index->getFirstString(sprintf('/files/file[@path="%s"]/@hash', strtr($file, ['\\' => '/'])), $mtime);
+			$fileHash = md5_file($path);
+			if($indexHash === $fileHash) {
+				continue;
+			}
+			
 			yield new ChangedFile(
 				absolutePath: $path,
 				relativePath: $file,
