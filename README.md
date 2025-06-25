@@ -46,28 +46,44 @@ echo $path;
 # Progress
 
 - [x] Functions
-  - [ ] Parameters
-    - [ ] Attributes
-    - [x] Type hint
-  - [ ] Return type
-  - [ ] PHPDoc annotations
-- [x] Class definitions
-  - [ ] Attributes
-  - [ ] PHPDoc annotations
-  - [x] Final mark
-  - [x] Abstract mark
-  - [x] Implementing Interfaces
-  - [x] Extending class
-  - [ ] Traits
-  - [x] Methods
+  - [x] Attributes
+    - [x] Arguments
+  - [x] Parameters
     - [x] Attributes
-      - [x] Arguments 
-    - [x] Visibility
-    - [x] Static mark
+      - [ ] Arguments
+    - [x] Type hint
+  - [x] Return type
+  - [ ] PHPDoc annotations
+  - [x] Class definitions
+    - [ ] Attributes
+      - [ ] Arguments
+    - [ ] PHPDoc annotations
     - [x] Final mark
     - [x] Abstract mark
-    - [x] Constructor methods
-    - [x] Parameters
+    - [x] Implementing Interfaces
+    - [x] Extending class
+    - [x] Methods
+      - [x] Attributes
+        - [x] Arguments 
+      - [x] Visibility
+      - [x] Static mark
+      - [x] Final mark
+      - [x] Abstract mark
+      - [x] Constructor methods
+      - [x] Parameters
+        - [x] Attributes
+          - [ ] Arguments
+        - [x] Type hint
+      - [x] Return type
+    - [ ] Traits (merging methods and properties into classes)
       - [ ] Attributes
-      - [x] Type hint
-    - [x] Return type
+        - [ ] Arguments
+      - [ ] Constants ...
+        - [ ] Attributes
+          - [ ] Arguments
+      - [ ] Properties ...
+        - [ ] Attributes
+          - [ ] Arguments
+      - [ ] Methods ...
+        - [ ] Attributes
+          - [ ] Arguments
