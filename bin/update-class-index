@@ -66,7 +66,7 @@ function findAll($currentDir, string ...$dirs) {
 		
 		$fi = new FileInfo();
 		foreach ($iterator as $fileInfo) {
-			if ($fileInfo->isFile() && in_array($fileInfo->getExtension(), ['php', 'phtml'])) {
+			if ($fileInfo->isFile() && in_array($fileInfo->getExtension(), ['php', 'php7', 'php8'])) {
 				$fi->relativePath = concatPaths($currentDir, $fileInfo->getPathname());
 				$fi->mtime = $fileInfo->getMTime();
 				$fi->path = $fileInfo->getPathname();
