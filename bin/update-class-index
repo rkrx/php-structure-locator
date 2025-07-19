@@ -13,7 +13,7 @@ use RecursiveDirectoryIterator;
 use Stringable;
 use RecursiveIteratorIterator;
 
-/** @var string $composerAutoloadPath */
+/** @var string|null $composerAutoloadPath */
 $composerAutoloadPath = $GLOBALS['_composer_autoload_path'] ?? null;
 
 $composerAutoloadPath ??= __DIR__ . '/../vendor/autoload.php';
@@ -50,18 +50,11 @@ function normalizePath(string $path): string {
 	return implode('/', $normalized);
 }
 
-function concatPaths(string $path1, string $path2): string {
-	$path1 = rtrim($path1, '/\\');
-	$path2 = ltrim($path2, '/\\');
-	return $path1 . DIRECTORY_SEPARATOR . $path2;
-}
-
 /**
- * @param string $currentDir
  * @param string ...$dirs
  * @return Generator<FileInfo>
  */
-function findAll(string $currentDir, string ...$dirs) {
+function findAll(string ...$dirs) {
 	foreach($dirs as $dir) {
 		$dirIterator = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
 		
@@ -73,7 +66,7 @@ function findAll(string $currentDir, string ...$dirs) {
 			if ($fileInfo->isFile() && in_array($fileInfo->getExtension(), ['php', 'php7', 'php8'])) {
 				$fi->relativePath = $fileInfo->getPathname();
 				$fi->mtime = $fileInfo->getMTime();
-				$fi->path = concatPaths($currentDir, $fileInfo->getPathname());
+				$fi->path = $fileInfo->getPathname();
 				yield $fi;
 			}
 		}
@@ -124,7 +117,8 @@ $logger = new class extends AbstractLogger {
 	}
 };
 
-chdir(normalizePath($cwd));
+$cwd = normalizePath($cwd);
+chdir($cwd);
 
 $updateIndexService = new UpdateIndexService($logger);
 $updateIndexService->updateIndex($outXml, findAll(...$directories));
