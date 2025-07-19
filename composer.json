@@ -6,7 +6,10 @@
 	"keywords": ["php", "structure", "parser", "xml", "xpath", "locator", "finder"],
 	"homepage": "https://github.com/rkrx/php-structure-locator",
 	"authors": [{"name": "Ron Kirschler", "email": "ron.kirschler@gmail.com"}],
-    "require": {
+	"bin": [
+		"bin/update-class-index"
+	],
+	"require": {
 		"php": ">= 8.1",
 
 		"ext-dom": "*",
@@ -14,6 +17,10 @@
         "symfony/finder": ">= 6.0",
         "nikic/php-parser": ">= 5.5",
 		"psr/log": ">= 1.0"
+	},
+	"require-dev": {
+		"phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^12.2"
 	},
     "autoload": {
         "psr-4": {
@@ -24,11 +31,7 @@
         "psr-4": {
             "PhpLocate\\": "tests/"
         }
-    },
-    "require-dev": {
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^12.2"
-	},
+		},
 	"scripts": {
 		"phpstan": "phpstan analyse -c phpstan.neon"
 	}

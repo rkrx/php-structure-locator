@@ -7,6 +7,7 @@ use PhpLocate\Internal\ChangeSetProjection\ChangedFile;
 use PhpLocate\Internal\ChangeSetProjection\NewFile;
 use PhpLocate\Internal\ChangeSetProjection\RemovedFile;
 use PhpLocate\Internal\ChangeSetProjectionService;
+use PhpLocate\Internal\FileInfo;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -17,7 +18,7 @@ class UpdateIndexService {
 	
 	/**
 	 * @param string $indexPath
-	 * @param iterable<SplFileInfo> $files
+	 * @param iterable<FileInfo|SplFileInfo> $files
 	 * @return void
 	 */
 	public function updateIndex(string $indexPath, iterable $files): void {

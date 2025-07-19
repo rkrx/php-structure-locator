@@ -14,15 +14,20 @@ use Symfony\Component\Finder\SplFileInfo;
  */
 class ChangeSetProjectionService {
 	/**
-	 * @param iterable<SplFileInfo> $items
+	 * @param iterable<FileInfo|SplFileInfo> $items
 	 * @return Generator<NewFile|RemovedFile|ChangedFile>
 	 */
 	public function findChanged(iterable $items, Index $index): Generator {
 		$files = [];
 		$lookup = [];
 		foreach($items as $file) {
-			$files[$file->getRelativePathname()] = $file->getMTime();
-			$lookup[$file->getRelativePathname()] = $file->getPathname();
+			if($file instanceof SplFileInfo) {
+				$files[$file->getRelativePathname()] = $file->getMTime();
+				$lookup[$file->getRelativePathname()] = $file->getPathname();
+			} else {
+				$files[$file->getRelativePathname()] = $file->getMTime();
+				$lookup[$file->getRelativePathname()] = $file->getPathname();
+			}
 		}
 		
 		$indexedFiles = $index->getFilePathsAndLastModifiedDate();

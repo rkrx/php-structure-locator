@@ -1,0 +1,114 @@
+#!/usr/bin/env php
+<?php
+
+namespace PhpLocate;
+
+use PhpLocate\Internal\FileInfo;
+use Psr\Log\AbstractLogger;
+use Generator;
+use Traversable;
+use SplFileInfo;
+use Stringable;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+function normalizePath(string $path): string {
+	$path = strtr($path, ['\\' => '/']);
+	$parts = explode('/', $path);
+	$normalized = [];
+	foreach ($parts as $idx => $part) {
+		if ($part === '' || $part === '.') {
+			if($idx === 0) {
+				$normalized[] = $part;
+			}
+			continue;
+		}
+		
+		if ($part === '..') {
+			if (count($normalized) > 0 && end($normalized) !== '..') {
+				array_pop($normalized);
+			} else {
+				$normalized[] = $part;
+			}
+		} else {
+			$normalized[] = $part;
+		}
+	}
+	
+	return implode('/', $normalized);
+}
+
+function concatPaths(string $path1, string $path2): string {
+	$path1 = rtrim($path1, '/\\');
+	$path2 = ltrim($path2, '/\\');
+	return $path1 . DIRECTORY_SEPARATOR . $path2;
+}
+
+/**
+ * @param string $currentDir
+ * @param string ...$dirs
+ * @return Generator<FileInfo>
+ */
+function findAll($currentDir, string ...$dirs) {
+	foreach($dirs as $dir) {
+		$normalizedDir = normalizePath($currentDir . DIRECTORY_SEPARATOR . $dir);
+		$relativeDir = (string) preg_replace(sprintf('~^(%s/+)~', preg_quote($currentDir, '~')), '', $normalizedDir);
+		
+		$dirIterator = new RecursiveDirectoryIterator($relativeDir, RecursiveDirectoryIterator::SKIP_DOTS);
+		
+		/** @var Traversable<SplFileInfo> $iterator */
+		$iterator = new RecursiveIteratorIterator($dirIterator);
+		
+		$fi = new FileInfo();
+		foreach ($iterator as $fileInfo) {
+			if ($fileInfo->isFile() && in_array($fileInfo->getExtension(), ['php', 'phtml'])) {
+				$fi->relativePath = concatPaths($currentDir, $fileInfo->getPathname());
+				$fi->mtime = $fileInfo->getMTime();
+				$fi->path = $fileInfo->getPathname();
+				yield $fi;
+			}
+		}
+	}
+}
+
+/** @var string[] $argv */
+$argv = $_SERVER['argv'];
+
+$args = array_slice($argv, 1);
+
+$outXml = 'class-index.xml';
+$directories = [];
+$cwd = getcwd() ?: __DIR__;
+
+while(count($args) > 0) {
+	$command = array_shift($args);
+	if($command === '--out' || $command === '-o') {
+		$outXml = (string) array_shift($args);
+		continue;
+	}
+	
+	if($command === '--include' || $command === '-i') {
+		$directories[] = (string) array_shift($args);
+		continue;
+	}
+	
+	if($command === '--working-directory' || $command === '-w') {
+		$cwd = (string) array_shift($args);
+		continue;
+	}
+	
+	printf("Invalid argument: %s%s", $args[0], PHP_EOL);
+	printf("Require either --out, --include or --working-directory%s", PHP_EOL);
+	exit;
+}
+
+$logger = new class extends AbstractLogger {
+	public function log($level, string|Stringable $message, array $context = []): void {
+		printf("%s%s", $message, PHP_EOL);
+	}
+};
+
+$updateIndexService = new UpdateIndexService($logger);
+$updateIndexService->updateIndex($outXml, findAll($cwd, ...$directories));
