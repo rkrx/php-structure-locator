@@ -13,6 +13,7 @@ use RecursiveDirectoryIterator;
 use Stringable;
 use RecursiveIteratorIterator;
 
+/** @var string $composerAutoloadPath */
 $composerAutoloadPath = $GLOBALS['_composer_autoload_path'] ?? null;
 
 $composerAutoloadPath ??= __DIR__ . '/../vendor/autoload.php';
