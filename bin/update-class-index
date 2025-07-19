@@ -6,10 +6,11 @@ namespace PhpLocate;
 use PhpLocate\Internal\FileInfo;
 use Psr\Log\AbstractLogger;
 use Generator;
+use ReturnTypeWillChange;
 use Traversable;
 use SplFileInfo;
-use Stringable;
 use RecursiveDirectoryIterator;
+use Stringable;
 use RecursiveIteratorIterator;
 
 $GLOBALS['_composer_autoload_path'] ??= __DIR__ . '/../vendor/autoload.php';
@@ -107,7 +108,14 @@ while(count($args) > 0) {
 }
 
 $logger = new class extends AbstractLogger {
-	public function log($level, string|Stringable $message, array $context = []): void {
+	/**
+	 * @param mixed $level
+	 * @param Stringable|string $message
+	 * @param mixed[] $context
+	 * @return void
+	 */
+	#[ReturnTypeWillChange]
+	public function log($level, $message, array $context = []): void {
 		printf("%s%s", $message, PHP_EOL);
 	}
 };
