@@ -12,7 +12,9 @@ use Stringable;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
-require __DIR__ . '/../vendor/autoload.php';
+$GLOBALS['_composer_autoload_path'] ??= __DIR__ . '/../vendor/autoload.php';
+
+require $GLOBALS['_composer_autoload_path'];
 
 function normalizePath(string $path): string {
 	$path = strtr($path, ['\\' => '/']);
