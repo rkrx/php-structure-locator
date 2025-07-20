@@ -7,7 +7,7 @@
 	"homepage": "https://github.com/rkrx/php-structure-locator",
 	"authors": [{"name": "Ron Kirschler", "email": "ron.kirschler@gmail.com"}],
 	"bin": [
-		"bin/update-class-index"
+		"bin/update-php-index"
 	],
 	"require": {
 		"php": ">= 8.1",
