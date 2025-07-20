@@ -14,7 +14,6 @@
 
 		"ext-dom": "*",
 
-        "symfony/finder": ">= 6.0",
         "nikic/php-parser": ">= 5.5",
 		"psr/log": ">= 1.0"
 	},
@@ -31,7 +30,7 @@
         "psr-4": {
             "PhpLocate\\": "tests/"
         }
-		},
+	},
 	"scripts": {
 		"phpstan": "phpstan analyse -c phpstan.neon"
 	}

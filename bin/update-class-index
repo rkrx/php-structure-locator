@@ -3,15 +3,11 @@
 
 namespace PhpLocate;
 
-use PhpLocate\Internal\FileInfo;
+use PhpLocate\Internal\FileSystem\Finder;
+use PhpLocate\Internal\FileSystem\Tools;
 use Psr\Log\AbstractLogger;
-use Generator;
 use ReturnTypeWillChange;
-use Traversable;
-use SplFileInfo;
-use RecursiveDirectoryIterator;
 use Stringable;
-use RecursiveIteratorIterator;
 
 /** @var string|null $composerAutoloadPath */
 $composerAutoloadPath = $GLOBALS['_composer_autoload_path'] ?? null;
@@ -24,63 +20,14 @@ if(!file_exists($composerAutoloadPath)) {
 
 require $composerAutoloadPath;
 
-function normalizePath(string $path): string {
-	$path = strtr($path, ['\\' => '/']);
-	$parts = explode('/', $path);
-	$normalized = [];
-	foreach ($parts as $idx => $part) {
-		if ($part === '' || $part === '.') {
-			if($idx === 0) {
-				$normalized[] = $part;
-			}
-			continue;
-		}
-		
-		if ($part === '..') {
-			if (count($normalized) > 0 && end($normalized) !== '..') {
-				array_pop($normalized);
-			} else {
-				$normalized[] = $part;
-			}
-		} else {
-			$normalized[] = $part;
-		}
-	}
-	
-	return implode('/', $normalized);
-}
-
-/**
- * @param string ...$dirs
- * @return Generator<FileInfo>
- */
-function findAll(string ...$dirs) {
-	foreach($dirs as $dir) {
-		$dirIterator = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
-		
-		/** @var Traversable<SplFileInfo> $iterator */
-		$iterator = new RecursiveIteratorIterator($dirIterator);
-		
-		$fi = new FileInfo();
-		foreach ($iterator as $fileInfo) {
-			if ($fileInfo->isFile() && in_array($fileInfo->getExtension(), ['php', 'php7', 'php8'])) {
-				$fi->relativePath = $fileInfo->getPathname();
-				$fi->mtime = $fileInfo->getMTime();
-				$fi->path = $fileInfo->getPathname();
-				yield $fi;
-			}
-		}
-	}
-}
-
 /** @var string[] $argv */
 $argv = $_SERVER['argv'];
 
 $args = array_slice($argv, 1);
 
 $outXml = 'class-index.xml';
-$directories = [];
-$cwd = getcwd() ?: __DIR__;
+
+$finder = new Finder();
 
 while(count($args) > 0) {
 	$command = array_shift($args);
@@ -90,12 +37,17 @@ while(count($args) > 0) {
 	}
 	
 	if($command === '--include' || $command === '-i') {
-		$directories[] = (string) array_shift($args);
+		$finder->addInclude((string) array_shift($args));
+		continue;
+	}
+	
+	if($command === '--exclude' || $command === '-e') {
+		$finder->addExclude((string) array_shift($args));
 		continue;
 	}
 	
 	if($command === '--working-directory' || $command === '-w') {
-		$cwd = (string) array_shift($args);
+		$finder->setWorkingDirectory((string) array_shift($args));
 		continue;
 	}
 	
@@ -117,8 +69,5 @@ $logger = new class extends AbstractLogger {
 	}
 };
 
-$cwd = normalizePath($cwd);
-chdir($cwd);
-
 $updateIndexService = new UpdateIndexService($logger);
-$updateIndexService->updateIndex($outXml, findAll(...$directories));
+$updateIndexService->updateIndex($outXml, $finder->find());

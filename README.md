@@ -13,6 +13,32 @@ The indexer performs the following steps:
 4. Stores the index in an easily searchable XML file
 5. Enables searching via XPath queries
 
+## Command line Usage
+
+```bash
+php index.php --out index.xml --include src --include tests
+```
+
+### Explanation
+
+| Parameter                   | Short        | Required | Description                                                            |
+|-----------------------------|--------------|----------|------------------------------------------------------------------------|
+| `--out <file>`              | `-o <file>`  | Yes      | Path to the output XML file for storing the index                      |
+| `--include <dir>`           | `-i <file>`  | Yes      | Directory to include for indexing; can be used multiple times          |
+| `--exclude <pattern>`       | `-e <file>`  | No       | Glob pattern to exclude files or folders from the included directories |
+| `--working-directory <dir>` | `-w <file>`  | No       | Sets the base directory for all relative paths                         |
+
+Notes:
+- At least one `--include` is required.
+- `--exclude` applies only within the scope of the specified `--include` paths.
+- Patterns for `--exclude` support common glob syntax:
+  - `*` matches any string.
+  - `xyz/*.*` matches any file with an extension.
+  - `**/XyzTest.php` matches directories recursively.
+  - `XyzTest.{php,inc}` matches multiple file extensions.
+  - `src/{*,**/*}.php` matches all `.php` files in the `src` directory and its subdirectories.
+- If --working-directory is not set, the current working directory is used.
+
 ## Usage Example
 
 Find all attributes of class-methods with a specific name:
