@@ -16,7 +16,7 @@ The indexer performs the following steps:
 ## Command line Usage
 
 ```bash
-php index.php --out index.xml --include src --include tests
+php index.php --out index.xml --include 'src/{*,**/*}.php' --include 'tests/{*,**/*}.php'
 ```
 
 ### Explanation
