@@ -47,14 +47,14 @@ class PHPDiscoveryService {
 		$modifiedStmts = $traverser->traverse($stmts);
 		
 		foreach($modifiedStmts as $astNode) {
-			$this->interpreteAst($astNode, $node, new AstContext());
+			$this->analyzeAstNode($astNode, $node, new AstContext());
 		}
 	}
 	
-	private function interpreteAst(Node $astNode, XMLNode $node, AstContext $ctx): void {
+	private function analyzeAstNode(Node $astNode, XMLNode $node, AstContext $ctx): void {
 		if($astNode instanceof Node\Stmt\Namespace_) {
 			foreach($astNode->stmts as $stmt) {
-				$this->interpreteAst($stmt, $node, $ctx);
+				$this->analyzeAstNode($stmt, $node, $ctx);
 			}
 		} elseif($astNode instanceof Node\Stmt\Function_) {
 			$attr = ['name' => (string) $astNode->name];
@@ -67,15 +67,15 @@ class PHPDiscoveryService {
 			}
 			
 			foreach($astNode->getAttrGroups() as $attrGroup) {
-				$this->interpreteAst($attrGroup, $functionNode, $ctx);
+				$this->analyzeAstNode($attrGroup, $functionNode, $ctx);
 			}
 			
 			foreach($astNode->getParams() as $paramNode) {
-				$this->interpreteAst($paramNode, $functionNode, $ctx);
+				$this->analyzeAstNode($paramNode, $functionNode, $ctx);
 			}
 			
 			foreach($astNode->stmts as $stmt) {
-				$this->interpreteAst($stmt, $functionNode, $ctx);
+				$this->analyzeAstNode($stmt, $functionNode, $ctx);
 			}
 		} elseif($astNode instanceof Node\Stmt\Trait_) {
 			$attr = ['name' => (string) $astNode->namespacedName];
@@ -83,11 +83,11 @@ class PHPDiscoveryService {
 			$traitNode = $node->addChild('trait', $attr);
 			
 			foreach($astNode->stmts as $stmt) {
-				$this->interpreteAst($stmt, $traitNode, $ctx);
+				$this->analyzeAstNode($stmt, $traitNode, $ctx);
 			}
 			
 			foreach($astNode->attrGroups as $attrGroup) {
-				$this->interpreteAst($attrGroup, $traitNode, $ctx);
+				$this->analyzeAstNode($attrGroup, $traitNode, $ctx);
 			}
 		} elseif($astNode instanceof Node\Stmt\Class_) {
 			$attr = ['name' => (string) $astNode->namespacedName];
@@ -115,15 +115,15 @@ class PHPDiscoveryService {
 			}
 			
 			foreach($astNode->attrGroups as $attrGroup) {
-				$this->interpreteAst($attrGroup, $classNode, $ctx);
+				$this->analyzeAstNode($attrGroup, $classNode, $ctx);
 			}
 			
 			foreach($astNode->stmts as $stmt) {
-				$this->interpreteAst($stmt, $classNode, $ctx);
+				$this->analyzeAstNode($stmt, $classNode, $ctx);
 			}
 		} elseif($astNode instanceof Node\AttributeGroup) {
 			foreach($astNode->attrs as $attrNode) {
-				$this->interpreteAst($attrNode, $node, $ctx);
+				$this->analyzeAstNode($attrNode, $node, $ctx);
 			}
 		} elseif($astNode instanceof Node\Attribute) {
 			$name = $astNode->name;
@@ -133,7 +133,7 @@ class PHPDiscoveryService {
 			$attr = ['name' => $name];
 			$attrNode = $node->addChild('attribute', $attr);
 			foreach($astNode->args as $argNode) {
-				$this->interpreteAst($argNode, $attrNode, $ctx);
+				$this->analyzeAstNode($argNode, $attrNode, $ctx);
 			}
 		} elseif($astNode instanceof Node\Stmt\TraitUse) {
 			foreach($astNode->traits as $traitNode) {
@@ -180,7 +180,7 @@ class PHPDiscoveryService {
 				$propertyNode = $node->addChild('property', $attr);
 				
 				foreach($astNode->attrGroups as $attrGroup) {
-					$this->interpreteAst($attrGroup, $propertyNode, $ctx);
+					$this->analyzeAstNode($attrGroup, $propertyNode, $ctx);
 				}
 			}
 		} elseif($astNode instanceof Node\Stmt\ClassMethod) {
@@ -218,11 +218,11 @@ class PHPDiscoveryService {
 			$methodNode = $node->addChild('method', $attr);
 			
 			foreach($astNode->getAttrGroups() as $attrGroup) {
-				$this->interpreteAst($attrGroup, $methodNode, $ctx);
+				$this->analyzeAstNode($attrGroup, $methodNode, $ctx);
 			}
 			
 			foreach($astNode->getParams() as $paramNode) {
-				$this->interpreteAst($paramNode, $methodNode, $ctx);
+				$this->analyzeAstNode($paramNode, $methodNode, $ctx);
 			}
 		} elseif($astNode instanceof Node\Param) {
 			/** @var array<string, string> $attr */
@@ -246,7 +246,7 @@ class PHPDiscoveryService {
 			$paramNode = $node->addChild('param', $attr);
 			
 			foreach($astNode->attrGroups as $attrGroup) {
-				$this->interpreteAst($attrGroup, $paramNode, $ctx);;
+				$this->analyzeAstNode($attrGroup, $paramNode, $ctx);;
 			}
 			
 			if($astNode->type !== null) {
