@@ -16,6 +16,8 @@ use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
 class UpdateIndexService {
+	public const INDEX_VERSION = '20260114';
+
 	public function __construct(
 		private readonly LoggerInterface $logger
 	) {}
@@ -27,6 +29,17 @@ class UpdateIndexService {
 	 */
 	public function updateIndex(string $indexPath, iterable $files): void {
 		$index = Index::fromFile($indexPath);
+		$rootNode = $index->getFirstNode('/files');
+
+		$existingVersion = $rootNode->getAttr('version', '');
+		if($existingVersion !== self::INDEX_VERSION) {
+			$this->logger->info(sprintf(
+				"Index version mismatch (%s != %s); reindexing all files",
+				$existingVersion === '' ? '(none)' : $existingVersion,
+				self::INDEX_VERSION
+			));
+			$rootNode->clear();
+		}
 		
 		$service = new ChangeSetProjectionService();
 		$changes = $service->findChanged(items: $files, index: $index);
@@ -57,6 +70,8 @@ class UpdateIndexService {
 		}
 
 		$this->mergeTraitUses($index);
+
+		$rootNode->setAttr('version', self::INDEX_VERSION);
 		
 		$index->saveTo($indexPath);
 	}

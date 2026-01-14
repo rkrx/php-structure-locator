@@ -36,6 +36,7 @@ class IndexTest extends TestCase {
 	#[Test]
 	public function getStrings(): void {
 		$index = Index::fromFile($this->tempFile);
+		self::assertEquals(UpdateIndexService::INDEX_VERSION, $index->getFirstString('/files/@version'));
 		$allFiles = $index->getStrings('/files/file[class/@name="PhpLocate\\Suspects\\MyClass"]/@path');
 		self::assertEquals(['tests/Suspects/MyClass.php'], $allFiles);
 	}
