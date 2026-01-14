@@ -277,7 +277,7 @@ class PHPDiscoveryService {
 			
 			$node->addChild('argument', $attr);
 		} else {
-			$inspect = match(get_class($astNode)) {
+			$inspect = match($astNode::class) {
 				Node\Stmt\Echo_::class,
 				Node\Stmt\InlineHTML::class,
 				Node\Stmt\Declare_::class,
