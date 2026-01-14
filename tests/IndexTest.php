@@ -2,7 +2,7 @@
 
 namespace PhpLocate;
 
-use DOMException;
+use PhpLocate\Internal\RuntimeDOMException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -51,7 +51,7 @@ class IndexTest extends TestCase {
 		$path = $index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/attribute[@name="NonExistent"]]/@path', '-');
 		self::assertEquals('-', $path);
 		
-		$this->expectException(DOMException::class);
+		$this->expectException(RuntimeDOMException::class);
 		$index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/attribute[@name="NonExistent"]]/@path');
 	}
 	
@@ -65,7 +65,7 @@ class IndexTest extends TestCase {
 		$path = $index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeC"]]/@path', '-');
 		self::assertEquals('-', $path);
 		
-		$this->expectException(DOMException::class);
+		$this->expectException(RuntimeDOMException::class);
 		$index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeC"]]/@path');
 	}
 }

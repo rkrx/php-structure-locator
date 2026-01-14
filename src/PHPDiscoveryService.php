@@ -89,6 +89,24 @@ class PHPDiscoveryService {
 			foreach($astNode->attrGroups as $attrGroup) {
 				$this->analyzeAstNode($attrGroup, $traitNode, $ctx);
 			}
+		} elseif($astNode instanceof Node\Stmt\Interface_) {
+			$attr = ['name' => (string) $astNode->namespacedName];
+
+			$interfaceNode = $node->addChild('interface', $attr);
+
+			foreach($astNode->extends as $extendedInterfaceNode) {
+				$interfaceNode->addChild('extends', [
+					'name' => (string) ($extendedInterfaceNode->namespacedName ?? $extendedInterfaceNode->name), // @phpstan-ignore-line
+				]);
+			}
+
+			foreach($astNode->attrGroups as $attrGroup) {
+				$this->analyzeAstNode($attrGroup, $interfaceNode, $ctx);
+			}
+
+			foreach($astNode->stmts as $stmt) {
+				$this->analyzeAstNode($stmt, $interfaceNode, $ctx);
+			}
 		} elseif($astNode instanceof Node\Stmt\Class_) {
 			$attr = ['name' => (string) $astNode->namespacedName];
 			
