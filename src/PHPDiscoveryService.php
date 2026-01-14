@@ -100,6 +100,14 @@ class PHPDiscoveryService {
 				$attr['abstract'] = 'true';
 			}
 			
+			if($astNode->isReadonly()) {
+				$attr['readonly'] = 'true';
+			}
+
+			if($astNode->isAnonymous()) {
+				$attr['anonymous'] = 'true';
+			}
+
 			if($astNode->extends instanceof FullyQualified) {
 				/** @var string|null $namespacedName */
 				$namespacedName = $astNode->extends->namespacedName ?? null;
