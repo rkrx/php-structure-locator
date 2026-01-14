@@ -309,10 +309,10 @@ class PHPDiscoveryService {
 				Node\Stmt\TryCatch::class,
 				Node\Stmt\Nop::class,
 				Node\Stmt\ClassConst::class,
-				Node\Stmt\Use_::class,
-				Node\Stmt\Interface_::class => false,
+				Node\Stmt\Use_::class => false,
 				default => true
 			};
+
 			if($inspect) {
 				$dumper = new NodeDumper;
 				echo $dumper->dump($astNode) . "\n";

@@ -80,7 +80,11 @@ class Index {
 		$fileNodes = $this->node->getNodes('/files/*');
 		$result = [];
 		foreach($fileNodes as $fileNode) {
-			$result[$fileNode->getAttr('path')] = (string) $fileNode->getAttr('mtime');
+			/** @var string $path */
+			$path = $fileNode->getAttr('path');
+			/** @var string $mtime */
+			$mtime = $fileNode->getAttr('mtime');
+			$result[$path] = $mtime;
 		}
 		
 		return $result;

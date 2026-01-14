@@ -46,6 +46,7 @@ class XMLNode {
 			throw new DOMException("Invalid XPath query: $xpath");
 		}
 		foreach($children as $child) {
+			/** @var DOMNode $child */
 			yield new XMLNode($child);
 		}
 	}
@@ -67,6 +68,7 @@ class XMLNode {
 		if($children->length > 0) {
 			$node = $children->item(0);
 			if($node !== null) {
+				/** @var DOMNode $node */
 				return new XMLNode($node);
 			}
 		}
@@ -91,6 +93,7 @@ class XMLNode {
 		if($children->length > 0) {
 			$node = $children->item(0);
 			if($node !== null) {
+				/** @var DOMNode $node */
 				return new XMLNode($node);
 			}
 		}
@@ -151,9 +154,8 @@ class XMLNode {
 		$result = [];
 		if($map instanceof DOMNamedNodeMap) {
 			foreach($map as $attribute) {
-				if($attribute instanceof DOMAttr) {
-					$result[$attribute->name] = $attribute->value;
-				}
+				/** @var DOMAttr $attribute */
+				$result[$attribute->name] = $attribute->value;
 			}
 		}
 		
