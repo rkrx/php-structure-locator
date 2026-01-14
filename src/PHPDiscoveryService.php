@@ -62,7 +62,7 @@ class PHPDiscoveryService {
 			$functionNode = $node->addChild('function', $attr);
 			
 			if($astNode->returnType !== null) {
-				$returnNode = $node->addChild('return', []);
+				$returnNode = $functionNode->addChild('return', []);
 				$this->typeToNodeService->typeToString($astNode->returnType, $returnNode);
 			}
 			
@@ -236,12 +236,12 @@ class PHPDiscoveryService {
 				$attr['magic'] = 'true';
 			}
 			
+			$methodNode = $node->addChild('method', $attr);
+
 			if($astNode->returnType !== null) {
-				$returnNode = $node->addChild('return', []);
+				$returnNode = $methodNode->addChild('return', []);
 				$this->typeToNodeService->typeToString($astNode->returnType, $returnNode);
 			}
-			
-			$methodNode = $node->addChild('method', $attr);
 			
 			foreach($astNode->getAttrGroups() as $attrGroup) {
 				$this->analyzeAstNode($attrGroup, $methodNode, $ctx);

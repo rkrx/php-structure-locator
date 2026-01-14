@@ -101,15 +101,15 @@ echo $path;
           - [ ] Arguments
         - [x] Type hint
       - [x] Return type
-    - [ ] Traits (merging methods and properties into classes)
+    - [x] Traits (merging methods and properties into classes)
       - [ ] Attributes
         - [ ] Arguments
       - [ ] Constants ...
         - [ ] Attributes
           - [ ] Arguments
-      - [ ] Properties ...
-        - [ ] Attributes
-          - [ ] Arguments
-      - [ ] Methods ...
-        - [ ] Attributes
-          - [ ] Arguments
+      - [x] Properties ...
+        - [x] Attributes
+          - [x] Arguments
+      - [x] Methods ...
+        - [x] Attributes
+          - [x] Arguments

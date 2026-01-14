@@ -2,6 +2,9 @@
 
 namespace PhpLocate;
 
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
 use PhpLocate\Builder\TypeToNodeService;
 use PhpLocate\Internal\ChangeSetProjection\ChangedFile;
 use PhpLocate\Internal\ChangeSetProjection\NewFile;
@@ -9,6 +12,7 @@ use PhpLocate\Internal\ChangeSetProjection\RemovedFile;
 use PhpLocate\Internal\ChangeSetProjectionService;
 use PhpLocate\Internal\FileInfo;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Symfony\Component\Finder\SplFileInfo;
 
 class UpdateIndexService {
@@ -51,7 +55,167 @@ class UpdateIndexService {
 				$discoveryService->discoverInFile($change->absolutePath, $node);
 			}
 		}
+
+		$this->mergeTraitUses($index);
 		
 		$index->saveTo($indexPath);
+	}
+
+	private function mergeTraitUses(Index $index): void {
+		$doc = $index->getFirstNode('/files')->getDocument();
+		$xpath = new DOMXPath($doc);
+
+		$this->removePreviouslyMergedTraitMembers($xpath);
+
+		/** @var array<string, DOMElement> $traitsByName */
+		$traitsByName = [];
+
+		$traitNodes = $xpath->query('//trait[@name]');
+		if($traitNodes !== false) {
+			/** @var DOMElement $trait */
+			foreach($traitNodes as $trait) {
+				$name = $trait->getAttribute('name');
+				if($name !== '') {
+					$traitsByName[$name] = $trait;
+				}
+			}
+		}
+
+		$classNodes = $xpath->query('//class');
+		if($classNodes === false) {
+			return;
+		}
+
+		/** @var DOMElement $class */
+		foreach($classNodes as $class) {
+			$useNodes = $xpath->query('./use[@name]', $class);
+			if($useNodes === false) {
+				continue;
+			}
+
+			/** @var DOMElement $use */
+			foreach($useNodes as $use) {
+				$traitName = $use->getAttribute('name');
+				if($traitName === '' || !isset($traitsByName[$traitName])) {
+					continue;
+				}
+
+				$visited = [];
+				$members = $this->collectTraitMembers($xpath, $traitsByName, $traitName, $visited);
+
+				foreach($members['method'] as $method) {
+					$this->appendTraitMemberIfMissing($xpath, $doc, $class, $method, $traitName);
+				}
+
+				foreach($members['property'] as $property) {
+					$this->appendTraitMemberIfMissing($xpath, $doc, $class, $property, $traitName);
+				}
+			}
+		}
+	}
+
+	private function removePreviouslyMergedTraitMembers(DOMXPath $xpath): void {
+		$mergedNodes = $xpath->query('//class/*[@fromTrait]');
+		if($mergedNodes === false) {
+			return;
+		}
+
+		/** @var DOMElement $node */
+		foreach($mergedNodes as $node) {
+			$node->parentNode?->removeChild($node);
+		}
+	}
+
+	/**
+	 * @param array<string, DOMElement> $traitsByName
+	 * @param array<string, true> $visited
+	 * @return array{method: DOMElement[], property: DOMElement[]}
+	 */
+	private function collectTraitMembers(DOMXPath $xpath, array $traitsByName, string $traitName, array &$visited): array {
+		if(isset($visited[$traitName])) {
+			return ['method' => [], 'property' => []];
+		}
+		$visited[$traitName] = true;
+
+		$trait = $traitsByName[$traitName] ?? null;
+		if($trait === null) {
+			return ['method' => [], 'property' => []];
+		}
+
+		$methods = [];
+		$properties = [];
+
+		$methodNodes = $xpath->query('./method[@name]', $trait);
+		if($methodNodes !== false) {
+			/** @var DOMElement $method */
+			foreach($methodNodes as $method) {
+				$methods[] = $method;
+			}
+		}
+
+		$propertyNodes = $xpath->query('./property[@name]', $trait);
+		if($propertyNodes !== false) {
+			/** @var DOMElement $property */
+			foreach($propertyNodes as $property) {
+				$properties[] = $property;
+			}
+		}
+
+		$useNodes = $xpath->query('./use[@name]', $trait);
+		if($useNodes !== false) {
+			/** @var DOMElement $use */
+			foreach($useNodes as $use) {
+				$usedTraitName = $use->getAttribute('name');
+				if($usedTraitName === '' || !isset($traitsByName[$usedTraitName])) {
+					continue;
+				}
+
+				$nested = $this->collectTraitMembers($xpath, $traitsByName, $usedTraitName, $visited);
+				foreach($nested['method'] as $method) {
+					$methods[] = $method;
+				}
+				foreach($nested['property'] as $property) {
+					$properties[] = $property;
+				}
+			}
+		}
+
+		return ['method' => $methods, 'property' => $properties];
+	}
+
+	private function appendTraitMemberIfMissing(DOMXPath $xpath, DOMDocument $doc, DOMElement $class, DOMElement $member, string $traitName): void {
+		$memberName = $member->getAttribute('name');
+		if($memberName === '') {
+			return;
+		}
+
+		$query = sprintf('./%s[@name=%s]', $member->tagName, $this->xpathLiteral($memberName));
+		$nodeList = $xpath->query($query, $class);
+		if($nodeList === false) {
+			throw new RuntimeException("Invalid XPath query: $query");
+		}
+		$alreadyPresent = $nodeList->length > 0;
+		if($alreadyPresent) {
+			return;
+		}
+
+		$clone = $doc->importNode($member, true);
+		if($clone instanceof DOMElement) {
+			$clone->setAttribute('fromTrait', $traitName);
+		}
+		$class->appendChild($clone);
+	}
+
+	private function xpathLiteral(string $value): string {
+		if(!str_contains($value, "'")) {
+			return "'" . $value . "'";
+		}
+		if(!str_contains($value, '"')) {
+			return '"' . $value . '"';
+		}
+
+		$parts = explode("'", $value);
+		$escapedParts = array_map(static fn(string $part) => "'" . $part . "'", $parts);
+		return "concat(" . implode(", \"'\", ", $escapedParts) . ")";
 	}
 }

@@ -68,4 +68,20 @@ class IndexTest extends TestCase {
 		$this->expectException(RuntimeDOMException::class);
 		$index->getFirstString('/files/file[class/method/attribute[@name="PhpLocate\\Suspects\\MethodAttributeC"]]/@path');
 	}
+
+	#[Test]
+	public function mergesTraitMethodsIntoClasses(): void {
+		$index = Index::fromFile($this->tempFile);
+
+		$path = $index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/method[@name="traitMethod"]]/@path');
+		self::assertEquals('tests/Suspects/MyClass.php', $path);
+	}
+
+	#[Test]
+	public function mergesTraitPropertiesIntoClasses(): void {
+		$index = Index::fromFile($this->tempFile);
+
+		$path = $index->getFirstString('/files/file[class[@name="PhpLocate\\Suspects\\MyClass"]/property[@name="traitProp"]]/@path');
+		self::assertEquals('tests/Suspects/MyClass.php', $path);
+	}
 }
