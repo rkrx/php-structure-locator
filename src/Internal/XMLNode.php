@@ -165,6 +165,11 @@ class XMLNode {
 	public function getText(): ?string {
 		return $this->node->textContent;
 	}
+
+	public function setText(string $value): self {
+		$this->node->textContent = $value;
+		return $this;
+	}
 	
 	/**
 	 * @param string $name

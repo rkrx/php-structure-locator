@@ -255,7 +255,7 @@ class PHPDiscoveryService {
 			$name = $astNode->var->name; // @phpstan-ignore-line
 			
 			/** @var string $paramName */
-			$paramName = $name instanceof Node\Expr ? $name->toString() : (string) $name; // @phpstan-ignore-line
+			$paramName = (string) $name;
 			
 			$attr = [
 				'name' => $paramName,
@@ -280,10 +280,10 @@ class PHPDiscoveryService {
 				$this->typeToNodeService->typeToString($astNode->type, $typeNode);
 			}
 		} elseif($astNode instanceof Node\Arg) {
-			$attr = [
-				'name' => (string) $astNode->name,
-				//'value' => (string) $astNode->value
-			];
+			$attr = [];
+			if($astNode->name !== null) {
+				$attr['name'] = (string) $astNode->name;
+			}
 			
 			if($astNode->byRef) {
 				$attr['byRef'] = 'true';
@@ -293,7 +293,11 @@ class PHPDiscoveryService {
 				$attr['unpack'] = 'true';
 			}
 			
-			$node->addChild('argument', $attr);
+			$propNode = $node->addChild('prop', $attr);
+			$staticValue = $this->getStaticAttributeArgValue($astNode->value);
+			if($staticValue !== null) {
+				$propNode->addChild('value')->setText($staticValue);
+			}
 		} else {
 			$inspect = match($astNode::class) {
 				Node\Stmt\Echo_::class,
@@ -319,5 +323,31 @@ class PHPDiscoveryService {
 				exit;
 			}
 		}
+	}
+
+	private function getStaticAttributeArgValue(Node\Expr $expr): ?string {
+		if($expr instanceof Node\Scalar\String_) {
+			return $expr->value;
+		}
+		if($expr instanceof Node\Scalar\LNumber || $expr instanceof Node\Scalar\DNumber) {
+			return (string) $expr->value;
+		}
+		if($expr instanceof Node\Expr\ConstFetch) {
+			$name = strtolower((string) $expr->name);
+			return match($name) {
+				'true' => 'true',
+				'false' => 'false',
+				'null' => 'null',
+				default => null,
+			};
+		}
+		if($expr instanceof Node\Expr\UnaryMinus || $expr instanceof Node\Expr\UnaryPlus) {
+			$inner = $expr->expr;
+			if($inner instanceof Node\Scalar\LNumber || $inner instanceof Node\Scalar\DNumber) {
+				$prefix = $expr instanceof Node\Expr\UnaryMinus ? '-' : '';
+				return $prefix . (string) $inner->value;
+			}
+		}
+		return null;
 	}
 }
