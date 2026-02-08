@@ -17,8 +17,9 @@ class FinderTest extends TestCase {
 		$files = iterator_to_array($finder->find(reuseFileInfo: false), false);
 		$files = array_map(static fn(FileInfo $file) => $file->relativePath, $files);
 		
-		self::assertCount(5, $files);
+		self::assertCount(6, $files);
 		self::assertContains('tests/Suspects/MethodAttributeB.php', $files);
+		self::assertContains('tests/Suspects/AttributeArguments.php', $files);
 		self::assertNotContains('tests/Suspects/ClassAttributeB.php', $files);
 	}
 }

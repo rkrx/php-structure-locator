@@ -254,8 +254,7 @@ class PHPDiscoveryService {
 			/** @var array<string, string> $attr */
 			$name = $astNode->var->name; // @phpstan-ignore-line
 			
-			/** @var string $paramName */
-			$paramName = (string) $name;
+			$paramName = is_string($name) ? $name : (new NodeDumper())->dump($name);
 			
 			$attr = [
 				'name' => $paramName,
