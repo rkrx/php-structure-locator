@@ -33,7 +33,7 @@
         }
 	},
 	"scripts": {
-		"phpstan": "phpstan analyse -c phpstan.neon",
+		"phpstan": "phpstan analyse -c phpstan.neon --no-progress",
 		"test": "phpunit -c phpunit.xml"
 	}
 }
