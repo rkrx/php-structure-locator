@@ -11,7 +11,9 @@ class GlobMatcher {
 		$pattern = strtr($pattern, ['\*\*' => '.*', '\*' => '[^/]*', '\{' => '(?:', '\}' => ')', ',' => '|']);
 		$pattern = (string) preg_replace('{/+}', '/+', $pattern); // Replaces all // with / in the pattern and matches one or more slashes in the path.
 		$this->pattern = $pattern;
-		$this->prefix = (string) preg_replace('{^([^.*+?(|]+).*?$}', '$1', $pattern);
+		$prefix = (string) preg_replace('{^([^.*+?(|]+).*?$}', '$1', $pattern);
+		$prefix = (string) preg_replace('{\\\\(.)}', '$1', $prefix); // Converts escaped literals (e.g. \-) back to plain characters for starts-with checks.
+		$this->prefix = rtrim($prefix, '\\');
 	}
 	
 	public function match(string $path): bool {
