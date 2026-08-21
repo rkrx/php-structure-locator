@@ -307,6 +307,7 @@ class PHPDiscoveryService {
 				Node\Stmt\If_::class,
 				Node\Stmt\Foreach_::class,
 				Node\Stmt\Return_::class,
+				Node\Stmt\Static_::class,
 				Node\Stmt\Enum_::class,
 				Node\Stmt\While_::class,
 				Node\Stmt\TryCatch::class,
